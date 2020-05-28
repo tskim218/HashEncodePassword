@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	messages := make(chan string)
+	shutdown := make(chan string)
 
 	// this creates the backend storage system
 	db := datasource.NewInMemoryDB()
@@ -39,11 +39,11 @@ func main() {
 		log.Fatal(err)
 	}()
 
-	go func() { messages <- "ping" }()
+	go func() { shutdown <- "shut down" }()
 
 	time.Sleep(10*time.Second)
 
-	<-messages
+	<-shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
