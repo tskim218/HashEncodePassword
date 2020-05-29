@@ -4,7 +4,7 @@ import (
 	"log"
 	"io/ioutil"
 	"net/http"
-	// "bytes"
+	"strconv"
 	"strings"
 
 	"crypto/sha512"
@@ -41,12 +41,20 @@ func PostPassword(db datasource.DB) http.Handler {
 
     	log.Printf("sha = %s\n", sha)
 
-		// if err := db.Set(password[1], sha); err != nil {
-		// 	http.Error(w, "error setting value in DB", http.StatusInternalServerError)
-		// 	return
-		// }
+    	id := db.GetId()
+		//w.Write([]byte(string(id)))
 
-		go db.Set(password[1], sha)
+    	go func() {
+			//if val, err := db.Set(password[1], sha); err != nil {
+			if err := db.Set(id, sha); err != nil {
+				http.Error(w, "error setting value in DB", http.StatusInternalServerError)
+				return
+			}
+		}()
+
+		//go func() {
+		//	db.Set(password[1], sha)
+		//}()
 
 
 		// reqBody, err := ioutil.ReadAll(r.Body)
@@ -62,8 +70,13 @@ func PostPassword(db datasource.DB) http.Handler {
 		// log.Printf("%s\n", password)
 
 
+		str := strconv.FormatUint(id, 10)
+
+		log.Printf("why -%s\n", str)
 
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(str+"\n"))
+		//w.Write([]byte("working?"))
 		log.Printf("returning")
 	})
 }
