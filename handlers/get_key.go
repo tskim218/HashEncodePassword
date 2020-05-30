@@ -16,19 +16,11 @@ import (
 // as "key" in the path. It gets the value of the key from db
 func GetKey(db datasource.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//key := r.URL.Query().Get(db.inc)
-		//if key == "" {
-		//	http.Error(w, "missing key name in query string", http.StatusBadRequest)
-		//	return
-		//}
-		//val, err := db.Get(key)
-		//if err == datasource.ErrNotFound {
-		//	http.Error(w, "not found", http.StatusNotFound)
-		//	return
-		//} else if err != nil {
-		//	http.Error(w, fmt.Sprintf("error getting value from database: %s", err), http.StatusInternalServerError)
-		//	return
-		//}
+		if db.ShutDownStatus() == true {
+			log.Printf("Can't accept your request due to shuting down")
+			w.Write([]byte("Can't accept your request due to shuting down\n"))
+			return
+		}
 
 		db.IncWorker()
 
@@ -37,8 +29,6 @@ func GetKey(db datasource.DB) http.Handler {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-
-		//log.Printf("%s\n", r.URL.Path)
 
 		u, err := strconv.ParseUint(parts[2], 10, 64)
 
@@ -59,7 +49,6 @@ func GetKey(db datasource.DB) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(val+"\n"))
-		//w.Write([]byte("hello"))
 
 		db.DecWorker()
 	})

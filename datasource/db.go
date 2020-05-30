@@ -23,5 +23,9 @@ type DB interface {
 
 	DecWorker()
 
+	ChangeShutDownStatus()
+
+	ShutDownStatus() bool
+
 	WaitingForWorkersDone()
 }

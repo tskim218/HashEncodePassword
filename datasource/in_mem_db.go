@@ -7,6 +7,7 @@ import (
 )
 
 type inMemoryDB struct {
+	shutDownStatus bool
 	worker int
 	inc uint64
 	m map[uint64] string
@@ -17,7 +18,7 @@ type inMemoryDB struct {
 // All operations are concurrency safe
 func NewInMemoryDB() DB {
 	// return &inMemoryDB{m: make(map[string][]byte)}
-	return &inMemoryDB{worker: 0, inc: 0,m: make(map[uint64]string)}
+	return &inMemoryDB{shutDownStatus: false, worker: 0, inc: 0,m: make(map[uint64]string)}
 }
 
 // Get is the interface implementation
@@ -65,16 +66,31 @@ func (d *inMemoryDB) DecWorker() {
 	d.lck.Unlock()
 }
 
+func (d *inMemoryDB) ChangeShutDownStatus() {
+	d.lck.Lock()
+	d.shutDownStatus = true
+	d.lck.Unlock()
+}
+
+func (d *inMemoryDB) ShutDownStatus() bool {
+	d.lck.Lock()
+	status := d.shutDownStatus
+	d.lck.Unlock()
+
+	return status
+}
+
 func (d *inMemoryDB) WaitingForWorkersDone() {
 	for {
 		d.lck.Lock()
 		status := d.worker
 		log.Printf("Waiting for workers done: %d\n", status)
-		d.lck.Unlock()
-
 		if status == 0 {
+			d.lck.Unlock()
 			break
 		}
+		d.lck.Unlock()
+
 		time.Sleep(2*time.Second)
 	}
 	log.Printf("Worker Done sent")
