@@ -7,7 +7,7 @@ import (
 )
 
 type inMemoryDB struct {
-	// m   map[string][]byte
+	worker int
 	inc uint64
 	m map[uint64] string
 	lck sync.RWMutex
@@ -17,7 +17,7 @@ type inMemoryDB struct {
 // All operations are concurrency safe
 func NewInMemoryDB() DB {
 	// return &inMemoryDB{m: make(map[string][]byte)}
-	return &inMemoryDB{inc: 0,m: make(map[uint64]string)}
+	return &inMemoryDB{worker: 0, inc: 0,m: make(map[uint64]string)}
 }
 
 // Get is the interface implementation
@@ -51,4 +51,31 @@ func (d *inMemoryDB) GetId() uint64 {
 	d.inc++
 	d.lck.Unlock()
 	return d.inc
+}
+
+func (d *inMemoryDB) IncWorker() {
+	d.lck.Lock()
+	d.worker++
+	d.lck.Unlock()
+}
+
+func (d *inMemoryDB) DecWorker() {
+	d.lck.Lock()
+	d.worker--
+	d.lck.Unlock()
+}
+
+func (d *inMemoryDB) WaitingForWorkersDone() {
+	for {
+		d.lck.Lock()
+		status := d.worker
+		log.Printf("Waiting for workers done: %d\n", status)
+		d.lck.Unlock()
+
+		if status == 0 {
+			break
+		}
+		time.Sleep(2*time.Second)
+	}
+	log.Printf("Worker Done sent")
 }

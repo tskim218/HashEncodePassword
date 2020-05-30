@@ -18,4 +18,10 @@ type DB interface {
 	Set(Key uint64, val string) error
 
 	GetId() uint64
+
+	IncWorker()
+
+	DecWorker()
+
+	WaitingForWorkersDone()
 }

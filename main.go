@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	//"context"
 	//"fmt"
 	"github.com/tskim218/HashEncodePassword/datasource"
@@ -13,7 +16,7 @@ import (
 
 func main() {
 
-	shutdown := make(chan string)
+	shutDown := make(chan string)
 
 	// this creates the backend storage system
 	db := datasource.NewInMemoryDB()
@@ -23,6 +26,8 @@ func main() {
 	mux.Handle("/hash/", handlers.GetKey(db))
 	// set the value of a key
 	mux.Handle("/hash", handlers.PostPassword(db))
+
+	mux.Handle("/shutdown", handlers.ShutDown(shutDown))
 
 	log.Printf("serving on port 8080")
 
@@ -46,13 +51,26 @@ func main() {
 	//
 	//time.Sleep(500*time.Second)
 	//
-	<-shutdown
+	<-shutDown
 	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	//defer cancel()
-	//
-	//if err := srv.Shutdown(ctx); err != nil {
-	//	log.Printf("error shutting down server %s", err)
-	//} else {
-	//	log.Println("Server gracefully stopped")
-	//}
+
+	db.WaitingForWorkersDone()
+
+	log.Printf("why not done")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		// extra handling here
+		//db.WorkerStatus(workerDone)
+		//<-workerDone
+		cancel()
+	}()
+
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("error shutting down server %s", err)
+	} else {
+		log.Println("Server gracefully stopped")
+	}
 }

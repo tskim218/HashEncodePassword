@@ -22,6 +22,9 @@ func PostPassword(db datasource.DB) http.Handler {
 		// 	http.Error(w, "missing key name in path", http.StatusBadRequest)
 		// 	return
 		// }
+
+		db.IncWorker()
+
 		defer r.Body.Close()
 		val, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -78,6 +81,8 @@ func PostPassword(db datasource.DB) http.Handler {
 		w.Write([]byte(str+"\n"))
 		//w.Write([]byte("working?"))
 		log.Printf("returning")
+
+		db.DecWorker()
 	})
 }
 

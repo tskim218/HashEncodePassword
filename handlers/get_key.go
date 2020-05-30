@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"strconv"
+	"time"
 
 	"net/http"
 	"strings"
@@ -27,6 +29,9 @@ func GetKey(db datasource.DB) http.Handler {
 		//	http.Error(w, fmt.Sprintf("error getting value from database: %s", err), http.StatusInternalServerError)
 		//	return
 		//}
+
+		db.IncWorker()
+
 		parts := strings.Split(r.URL.String(), "/")
 		if len(parts) != 3 {
 			w.WriteHeader(http.StatusNotFound)
@@ -47,9 +52,15 @@ func GetKey(db datasource.DB) http.Handler {
 			http.Error(w, fmt.Sprintf("error getting value from database: %s", err), http.StatusInternalServerError)
 			return
 		}
+		for i := 0; i < 3; i++ {
+			log.Printf("Still working...")
+			time.Sleep(10*time.Second)
+		}
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(val+"\n"))
 		//w.Write([]byte("hello"))
+
+		db.DecWorker()
 	})
 }
