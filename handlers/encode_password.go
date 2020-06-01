@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"crypto/sha512"
 	"encoding/base64"
@@ -15,7 +16,7 @@ import (
 
 // Returns an http.Handler that can set a password for the key registered by mux.
 // It expects the password to be in the data of the POST request
-func EncodePassword(db datasource.DB, worker datasource.Worker) http.Handler {
+func EncodePassword(db datasource.DB, worker datasource.Worker, stats datasource.Stats) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status, err := worker.ShutDownStatus()
 		if err != nil {
@@ -27,6 +28,9 @@ func EncodePassword(db datasource.DB, worker datasource.Worker) http.Handler {
 			return
 		}
 
+		// Start process time
+		start := time.Now()
+
 		defer r.Body.Close()
 		val, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -37,7 +41,10 @@ func EncodePassword(db datasource.DB, worker datasource.Worker) http.Handler {
 		// register the current worker
 		worker.IncWorker()
 
+		// Start count hash handler worker
+		stats.AddWorker()
 		log.Printf("----- request encoding password ------\n\n")
+
 
 		// parse the data
 		password := strings.Split(string(val), "=")
@@ -61,11 +68,14 @@ func EncodePassword(db datasource.DB, worker datasource.Worker) http.Handler {
     	id := db.GetId()
 
     	go func() {
+			start := time.Now()
 			if err := db.Set(id, encode); err != nil {
 				http.Error(w, "error setting value in DB", http.StatusInternalServerError)
 				worker.DecWorker()
 				return
 			}
+			end := time.Now()
+			stats.AddTime(end.Sub(start).Microseconds())
 		}()
 
 		w.WriteHeader(http.StatusOK)
@@ -75,6 +85,11 @@ func EncodePassword(db datasource.DB, worker datasource.Worker) http.Handler {
 
 		// return to the client
 		w.Write([]byte(str+"\n"))
+
+		// end process time
+		end := time.Now()
+
+		stats.AddTime(end.Sub(start).Microseconds())
 
 		// unregister the current worker
 		worker.DecWorker()

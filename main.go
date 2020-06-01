@@ -22,6 +22,9 @@ func main() {
 	// this creates the worker status system
 	worker := datasource.WorkerStatus()
 
+	// process stats
+	stats := datasource.ProcStats()
+
 	// this creates a new http.ServeMux, which is used to register handlers to execute in response to routes
 	mux := http.NewServeMux()
 
@@ -29,10 +32,13 @@ func main() {
 	mux.Handle("/hash/", handlers.GetPassword(db, worker))
 
 	// create, encode, and set the value of a password
-	mux.Handle("/hash", handlers.EncodePassword(db, worker))
+	mux.Handle("/hash", handlers.EncodePassword(db, worker, stats))
 
 	// initiate shut down process
 	mux.Handle("/shutdown", handlers.ShutDown(shutDown, worker))
+
+	// get stats of the processes
+	mux.Handle("/stats", handlers.GetStats(stats))
 
 	log.Printf("serving on port 8080")
 

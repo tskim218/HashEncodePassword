@@ -9,9 +9,6 @@ type Worker interface {
 	// When the worker is done, decrement by 1
 	DecWorker()
 
-	// Get the number of workers
-	GetWorker() int
-
 	// Change the shut down status to true.
 	ChangeShutDownStatus() error
 

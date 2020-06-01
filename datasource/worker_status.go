@@ -28,14 +28,6 @@ func (w *workerStatus) DecWorker() {
 	w.lck.Unlock()
 }
 
-func (w *workerStatus) GetWorker() int {
-	w.lck.Lock()
-	numOfWorker := w.worker
-	w.lck.Unlock()
-
-	return numOfWorker
-}
-
 func (w *workerStatus) ChangeShutDownStatus() error {
 	w.lck.Lock()
 	w.shutDownStatus = true
